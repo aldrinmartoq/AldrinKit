@@ -95,10 +95,12 @@
 
 - (@action)addTableColumn:(id)aSender {
     var cols = [tableView tableColumns];
-    var name = "Column " + (cols.length + 1);
+    var identifier = "" + cols.length;
+    var name = "Column " + identifier;
 
     var col = [[CPTableColumn alloc] initWithIdentifier:name];    
     [[col headerView] setStringValue:name];
+    [[col headerView] sizeToFit];
     [tableView addTableColumn:col];
     
     [tableColumnsTable reloadData];
