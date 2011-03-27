@@ -98,7 +98,7 @@
     var identifier = "" + cols.length;
     var name = "Column " + identifier;
 
-    var col = [[CPTableColumn alloc] initWithIdentifier:name];    
+    var col = [[CPTableColumn alloc] initWithIdentifier:identifier];
     [[col headerView] setStringValue:name];
     [[col headerView] sizeToFit];
     [tableView addTableColumn:col];
