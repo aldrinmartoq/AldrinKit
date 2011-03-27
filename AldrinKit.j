@@ -5,3 +5,5 @@
 // Copyright (C) 2011 Aldrin Martoq.
 
 @import "GoogleMapsView.j"
+@import <AppKit/CPTableView.j>
+@import "CPActiveRecord.j"
