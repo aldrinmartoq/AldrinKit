@@ -8,8 +8,7 @@
 
 @implementation CPTableView (Integration)
 
-- (void)atlasPopulateAttributeInspectorClasses:(CPMutableArray)classes
-{
+- (void)atlasPopulateAttributeInspectorClasses:(CPMutableArray)classes {
     [super atlasPopulateAttributeInspectorClasses:classes];
 
     [classes addObject:[CPTableViewAttributeInspector class]];

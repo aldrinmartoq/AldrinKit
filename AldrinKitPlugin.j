@@ -6,30 +6,29 @@
 
 @import <AtlasKit/AtlasKit.j>
 @import "GoogleMapsView.j"
-@import "CPActiveRecord.j"
 
 @implementation AldrinKitPlugin : AKPlugin {
 }
 
 - (CPArray)libraryCibNames {
-  return [@"GoogleMapsView.cib", @"CPTableView.cib"];
+    return [@"AldrinKit.cib"];
 }
 
 - (void)init {
-  self = [super init];
-  
-  if (self) {
-      [_classDescriptions setObject:[CPDictionary dictionaryWithJSObject:{
-          "ClassName"   : "CPTableView",
-          "SuperClass"  : "CPControl",
-          "Outlets"     : {
-              "delegate" : "id",
-              "dataSource" : "id"
-          }
-      } recursively:YES] forKey:@"CPTableView"];
-  }
-  
-  return self;
+    self = [super init];
+
+    if (self) {
+        [_classDescriptions setObject:[CPDictionary dictionaryWithJSObject:{
+            "ClassName"     : "CPTableView",
+            "SuperClass"    : "CPControl",
+            "Outlets"       : {
+                "delegate"      : "id",
+                "dataSource"    : "id"
+            }
+        } recursively:YES] forKey:@"CPTableView"];
+    }
+
+    return self;
 }
 
 @end

@@ -6,4 +6,3 @@
 
 @import "GoogleMapsView.j"
 @import <AppKit/CPTableView.j>
-@import "CPActiveRecord.j"
