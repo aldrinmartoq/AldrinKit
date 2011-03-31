@@ -7,12 +7,15 @@
 @import <AppKit/CPView.j>
 
 
+var GoogleMapsViewDidChangeBoundsNotification = @"GoogleMapsViewDidChangeBoundsNotification";
 
 @implementation GoogleMapsView : CPView {
+    id                      _delegate;
     CPString                m_mapRegion;
     
     DOMElement              m_DOMMapElement;
     Object                  m_map;
+    Object                  m_geocoder;
 }
 
 - (id)initWithFrame:(CGRect)aFrame {
@@ -27,6 +30,24 @@
     return self;
 }
 
+- (void)setDelegate:(id)aDelegate {
+    var defaultCenter = [CPNotificationCenter defaultCenter];
+    
+    if (_delegate) {
+        [defaultCenter removeObserver:_delegate name:GoogleMapsViewDidChangeBoundsNotification object:self];
+    }
+    
+    _delegate = aDelegate;
+    
+    if ([_delegate respondsToSelector:@selector(googleMapsViewDidChangeBounds:)]) {
+        [defaultCenter
+            addObserver:_delegate
+               selector:@selector(googleMapsViewDidChangeBounds:)
+                   name:GoogleMapsViewDidChangeBoundsNotification
+                 object:self];
+    }
+}
+
 - (Object)map {
     return m_map;
 }
@@ -37,6 +58,30 @@
 
 - (void)setMapRegion:(CPString)aMapRegion {
     m_mapRegion = aMapRegion;
+}
+
+- (Object)geoCode {
+    if (!m_geocoder) {
+        m_geocoder = new google.maps.Geocoder();
+    }
+    return m_geocoder;    
+}
+
+- (void)geoCode:(CPString)location {
+    [self geoCode];
+    if ([location stringByTrimmingWhitespace] == "") {
+        CPLog.debug('empty');
+        return;
+    }
+    m_geocoder.geocode( { 'address' : location + ", Chile", 'region' : 'cl', 'language' : 'es', 'bounds' : m_map.getBounds() }, function (results, status) {
+       if (status == google.maps.GeocoderStatus.OK) {
+           CPLog.debug('resultados: ' + JSON.stringify(results));
+           m_map.setCenter(results[0].geometry.location);
+           m_map.fitBounds(results[0].geometry.viewport);
+       } else {
+           alert("Geocode failed " + status);
+       }
+    });
 }
 
 - (void)_buildDOM {
@@ -66,6 +111,14 @@
             }
 
             m_map = new google.maps.Map(m_DOMMapElement, myOpts);
+
+            // google.maps.event.addListener(m_map, 'mouseout', function(mouseEvent) {
+            //     CPLog.debug('out!' + mouseEvent);
+            // });
+
+            google.maps.event.addListener(m_map, 'idle', function() {
+               CPLog.debug('idle changed: ' + m_map.getBounds());
+            });
 
             style.left = "0px";
             style.top = "0px";
@@ -99,16 +152,16 @@
 // - (void)mouseDown:(CPEvent)anEvent {
 //     var type = [anEvent type];
 //     if (type === CPLeftMouseUp) {
-//         console.log('CPLeftMouseUP');
+//         CPLog.debug('CPLeftMouseUP');
 //         
 //         [super mouseDown:anEvent];
 //     } else if (type === CPLeftMouseDown) {
-//         console.log('CPLeftMouseDown');
+//         CPLog.debug('CPLeftMouseDown');
 //         //[CPApp setTarget:self selector:@selector(mouseDown:) forNextEventMatchingMask:CPLeftMouseDraggedMask untilDate:nil inMode:nil dequeue:YES];
 //         
 //         [super mouseDown:anEvent];
 //     } else if (type === CPLeftMouseDragged) {
-//         console.log('CPLeftMouseDragged');
+//         CPLog.debug('CPLeftMouseDragged');
 //         //[CPApp setTarget:self selector:@selector(mouseDown:) forNextEventMatchingMask:CPLeftMouseDraggedMask | CPLeftMouseUpMask untilDate:nil inMode:nil dequeue:YES];
 //         [super mouseDown:anEvent];
 //     }
