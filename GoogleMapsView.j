@@ -7,7 +7,11 @@
 @import <AppKit/CPView.j>
 
 
-var GoogleMapsViewDidChangeBoundsNotification = @"GoogleMapsViewDidChangeBoundsNotification";
+var GoogleMapsViewDidChangeBoundsNotification = @"GoogleMapsViewDidChangeBoundsNotification",
+    GoogleMapsViewWillGeocodeNotification = @"GoogleMapsViewWillGeocodeNotification",
+    GoogleMapsViewDidGeocodeNotification = @"GoogleMapsViewDidGeocodeNotification",
+    GoogleMapsViewWillGeolocateNotification = @"GoogleMapsViewWillGeolocateNotification",
+    GoogleMapsViewDidGeolocateNotification = @"GoogleMapsViewDidGeolocateNotification";
 
 @implementation GoogleMapsView : CPView {
     id                      _delegate;
@@ -16,6 +20,9 @@ var GoogleMapsViewDidChangeBoundsNotification = @"GoogleMapsViewDidChangeBoundsN
     DOMElement              m_DOMMapElement;
     Object                  m_map;
     Object                  m_geocoder;
+    Object                  m_mainMark;
+    Object                  m_markers;
+    Object                  m_infoWindow;
 }
 
 - (id)initWithFrame:(CGRect)aFrame {
@@ -28,60 +35,6 @@ var GoogleMapsViewDidChangeBoundsNotification = @"GoogleMapsViewDidChangeBoundsN
     }
 
     return self;
-}
-
-- (void)setDelegate:(id)aDelegate {
-    var defaultCenter = [CPNotificationCenter defaultCenter];
-    
-    if (_delegate) {
-        [defaultCenter removeObserver:_delegate name:GoogleMapsViewDidChangeBoundsNotification object:self];
-    }
-    
-    _delegate = aDelegate;
-    
-    if ([_delegate respondsToSelector:@selector(googleMapsViewDidChangeBounds:)]) {
-        [defaultCenter
-            addObserver:_delegate
-               selector:@selector(googleMapsViewDidChangeBounds:)
-                   name:GoogleMapsViewDidChangeBoundsNotification
-                 object:self];
-    }
-}
-
-- (Object)map {
-    return m_map;
-}
-
-- (CPString)mapRegion {
-    return m_mapRegion;
-}
-
-- (void)setMapRegion:(CPString)aMapRegion {
-    m_mapRegion = aMapRegion;
-}
-
-- (Object)geoCode {
-    if (!m_geocoder) {
-        m_geocoder = new google.maps.Geocoder();
-    }
-    return m_geocoder;    
-}
-
-- (void)geoCode:(CPString)location {
-    [self geoCode];
-    if ([location stringByTrimmingWhitespace] == "") {
-        CPLog.debug('empty');
-        return;
-    }
-    m_geocoder.geocode( { 'address' : location + ", Chile", 'region' : 'cl', 'language' : 'es', 'bounds' : m_map.getBounds() }, function (results, status) {
-       if (status == google.maps.GeocoderStatus.OK) {
-           CPLog.debug('resultados: ' + JSON.stringify(results));
-           m_map.setCenter(results[0].geometry.location);
-           m_map.fitBounds(results[0].geometry.viewport);
-       } else {
-           alert("Geocode failed " + status);
-       }
-    });
 }
 
 - (void)_buildDOM {
@@ -111,21 +64,173 @@ var GoogleMapsViewDidChangeBoundsNotification = @"GoogleMapsViewDidChangeBoundsN
             }
 
             m_map = new google.maps.Map(m_DOMMapElement, myOpts);
+            m_markers = [[CPArray alloc] init];
 
-            // google.maps.event.addListener(m_map, 'mouseout', function(mouseEvent) {
-            //     CPLog.debug('out!' + mouseEvent);
-            // });
-
-            google.maps.event.addListener(m_map, 'idle', function() {
-               CPLog.debug('idle changed: ' + m_map.getBounds());
+            google.maps.event.addListener(m_map, 'dragend', function() {
+                [[CPNotificationCenter defaultCenter] postNotificationName:GoogleMapsViewDidChangeBoundsNotification object:self];
             });
+            var x = new Array();
+            x.push(google.maps.event.addListener(m_map, 'idle', function() {
+                [[CPNotificationCenter defaultCenter] postNotificationName:GoogleMapsViewDidChangeBoundsNotification object:self];
+                google.maps.event.removeListener(x[0]);
+            }));
 
             style.left = "0px";
             style.top = "0px";
 
             _DOMElement.appendChild(m_DOMMapElement);
+            [[CPNotificationCenter defaultCenter] postNotificationName:GoogleMapsViewDidChangeBoundsNotification object:self];
         });
     });
+}
+
+- (id)delegate {
+    return _delegate;
+}
+
+- (void)setDelegate:(id)aDelegate {
+    var defaultCenter = [CPNotificationCenter defaultCenter];
+
+    if (_delegate) {
+        [defaultCenter removeObserver:_delegate name:GoogleMapsViewDidChangeBoundsNotification object:self];
+    }
+
+    _delegate = aDelegate;
+
+    if ([_delegate respondsToSelector:@selector(googleMapsViewDidChangeBounds:)]) {
+        [defaultCenter addObserver:_delegate
+                          selector:@selector(googleMapsViewDidChangeBounds:)
+                              name:GoogleMapsViewDidChangeBoundsNotification
+                            object:self];
+    }
+    if ([_delegate respondsToSelector:@selector(googleMapsViewWillGeocode:)]) {
+        [defaultCenter addObserver:_delegate
+                          selector:@selector(googleMapsViewWillGeocode:)
+                              name:GoogleMapsViewWillGeocodeNotification
+                            object:self];
+    }
+    if ([_delegate respondsToSelector:@selector(googleMapsViewDidGeocode:)]) {
+        [defaultCenter addObserver:_delegate
+                          selector:@selector(googleMapsViewDidGeocode:)
+                              name:GoogleMapsViewDidGeocodeNotification
+                            object:self];
+    }
+    if ([_delegate respondsToSelector:@selector(googleMapsViewWillGeolocate:)]) {
+        [defaultCenter addObserver:_delegate
+                          selector:@selector(googleMapsViewWillGeolocate:)
+                              name:GoogleMapsViewWillGeolocateNotification
+                            object:self];
+    }
+    if ([_delegate respondsToSelector:@selector(googleMapsViewDidGeolocate:)]) {
+        [defaultCenter addObserver:_delegate
+                          selector:@selector(googleMapsViewDidGeolocate:)
+                              name:GoogleMapsViewDidGeolocateNotification
+                            object:self];
+    }
+}
+
+- (Object)map {
+    return m_map;
+}
+
+- (CPString)mapRegion {
+    return m_mapRegion;
+}
+
+- (void)setMapRegion:(CPString)aMapRegion {
+    m_mapRegion = aMapRegion;
+}
+
+- (void)mainMark {
+    return m_mainMark;
+}
+
+- (void)mapCenter {
+    return m_map.getCenter();
+}
+
+- (void)setMainMarkAtCenter {
+    if (m_mainMark) {
+        m_mainMark.setPosition(m_map.getCenter());
+        m_mainMark.setAnimation(google.maps.Animation.DROP);
+    } else {
+        m_mainMark = new google.maps.Marker({ position: m_map.getCenter(), 
+                                             draggable: false,
+                                                   map: m_map,
+                                             animation: google.maps.Animation.DROP });
+    }
+}
+
+- (void)clearMarkers {
+    for (var i = 0; i < m_markers.length; i++) {
+        m_markers[i].setMap(null);
+    }
+    m_markers = new Array();
+}
+
+- (void)addMarkerData:(id)data withIcon:(id)icon {
+    for (var i = 0; i < data.length; i++) {
+        var item = data[i];
+        var marker = new google.maps.Marker( { position: new google.maps.LatLng(item['latlng'][0], item['latlng'][1]),
+                                                  title: item['title'],
+                                              draggable: false,
+                                                   icon: icon,
+                                                    map: m_map});
+        item['marker'] = marker;
+        m_markers.push(marker);
+        marker.content = item['info'];
+
+        var infowindow = new google.maps.InfoWindow({
+            content: item['info']
+        });
+        google.maps.event.addListener(marker, 'click', function() {
+            infowindow.open(m_map, marker);
+        });
+    }
+}
+
+- (void)showInfoForMarker:(Object)marker {
+    CPLog.debug('marker is ' + marker.getPosition() + ' ' + marker.content );
+    m_infoWindow = new google.maps.InfoWindow({ content: marker.content });
+    // m_infoWindow.setContent(marker.content);
+    m_infoWindow.open(m_map, marker);
+}
+
+- (Object)geoCode {
+    if (!m_geocoder) {
+        m_geocoder = new google.maps.Geocoder();
+    }
+    return m_geocoder;    
+}
+
+- (void)geoCode:(CPString)address {
+    [self geoCode];
+    if ([address stringByTrimmingWhitespace] == "") {
+        return;
+    }
+    [[CPNotificationCenter defaultCenter] postNotificationName:GoogleMapsViewWillGeocodeNotification object:self];
+    m_geocoder.geocode( { 'address' : address + ", Chile", 'region' : 'cl', 'language' : 'es', 'bounds' : m_map.getBounds() }, function (results, status) {
+       if (status == google.maps.GeocoderStatus.OK) {
+           CPLog.debug('resultados: ' + JSON.stringify(results));
+           m_map.setCenter(results[0].geometry.address);
+           m_map.fitBounds(results[0].geometry.viewport);
+       } else {
+           CPLog.warn('geolocation failed: ' + status);
+       }
+       [[CPNotificationCenter defaultCenter] postNotificationName:GoogleMapsViewDidGeocodeNotification object:self];
+    });
+}
+
+- (void)geoLocate {
+    if (navigator.geolocation) {
+        [[CPNotificationCenter defaultCenter] postNotificationName:GoogleMapsViewWillGeolocateNotification object:self];
+        navigator.geolocation.getCurrentPosition(function(position) {
+            var initialLocation = new google.maps.LatLng(position.coords.latitude,position.coords.longitude);
+            m_map.setCenter(initialLocation);
+            m_map.setZoom(15);
+            [[CPNotificationCenter defaultCenter] postNotificationName:GoogleMapsViewDidGeolocateNotification object:self];
+        });
+    }
 }
 
 /*!

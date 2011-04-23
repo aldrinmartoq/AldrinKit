@@ -34,18 +34,18 @@
     var cols = [tableColumnsTable tableColumns];
     tableColumnsTableName = cols[0];
     tableColumnsTableIdentifier = cols[1];
-    
+
     [tableColumnsTable setDelegate:self];
     [tableColumnsTable setDataSource:self];    
 }
 
 - (void)refresh {
     var inspectedObjects = [self inspectedObjects];
-    
+
     if ([inspectedObjects count] > 0) {
         tableView = inspectedObjects[0];
     }
-    
+
     [allowsColumnReordering takeValueFromKeyPath:@"allowsColumnReordering" ofObjects:inspectedObjects];
     [allowsColumnResizing takeValueFromKeyPath:@"allowsColumnResizing" ofObjects:inspectedObjects];
     [allowsColumnSelection takeValueFromKeyPath:@"allowsColumnSelection" ofObjects:inspectedObjects];
@@ -53,7 +53,7 @@
     [allowsMultipleSelection takeValueFromKeyPath:@"allowsMultipleSelection" ofObjects:inspectedObjects];
     [usesAlternatingRowBackgroundColors takeValueFromKeyPath:@"usesAlternatingRowBackgroundColors" ofObjects:inspectedObjects];
     [hiddenTableHeaders takeValueFromKeyPath:@"headerView.hidden" ofObjects:inspectedObjects];
-    
+
     [tableColumnsTable reloadData];
 }
 
@@ -102,7 +102,7 @@
     [[col headerView] setStringValue:name];
     [[col headerView] sizeToFit];
     [tableView addTableColumn:col];
-    
+
     [tableColumnsTable reloadData];
     [tableView display];
 }
@@ -115,9 +115,9 @@
         return;
     }
     var tableColumn = cols[rowIndex];
-    
+
     [tableView removeTableColumn:tableColumn];
-    
+
     [tableColumnsTable reloadData];
     [tableView display];
 }
@@ -142,7 +142,7 @@
 
 - (void)tableView:(CPTableView)aTableView setObjectValue: (CPControl)anObject forTableColumn:(CPTableColumn)aTableColumn row:(int)rowIndex {
     var cols = [tableView tableColumns];
-    
+
     if (aTableColumn == tableColumnsTableName) {
         [[cols[rowIndex] headerView] setStringValue:anObject];
     } else if (aTableColumn == tableColumnsTableIdentifier) {
