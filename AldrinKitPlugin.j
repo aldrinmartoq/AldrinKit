@@ -6,7 +6,7 @@
 
 @import <AtlasKit/AtlasKit.j>
 @import "GoogleMapsView.j"
-@import "GoogleMapsView.j"
+@import "RutTextField.j"
 
 @implementation AldrinKitPlugin : AKPlugin {
 }
@@ -25,6 +25,14 @@
             "Outlets"       : {
                 "delegate"      : "id",
                 "dataSource"    : "id"
+            }
+        } recursively:YES] forKey:@"CPTableView"];
+
+        [_classDescriptions setObject:[CPDictionary dictionaryWithJSObject:{
+            "ClassName"     : "CPTabView",
+            "SuperClass"    : "CPView",
+            "Outlets"       : {
+                "delegate"      : "id"
             }
         } recursively:YES] forKey:@"CPTableView"];
 

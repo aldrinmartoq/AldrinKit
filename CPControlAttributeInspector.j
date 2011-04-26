@@ -5,7 +5,6 @@
 // Copyright (C) 2011 Aldrin Martoq.
 
 @import <AtlasKit/AtlasKit.j>
-@import <AppKit/CPButton.j>
 
 @implementation CPControlAttributeInspector : AKInspector {
     @outlet CPPopUpButton       align;
@@ -13,6 +12,7 @@
     @outlet CPButton            bold;
     @outlet CPButton            underline;
     @outlet CPButton            italic;
+    @outlet CPCheckBox          border;
 }
 
 - (CPString)label {
@@ -47,19 +47,34 @@
     }
 }
 
+- (@action)border:(id)sender {
+    var inspectedObjects = [self inspectedObjects];
+    var v = [border state];
+    CPLog.debug("border change: " + v);
+    for (var i=0,len=inspectedObjects.length; i< len; i++) {
+        var o = inspectedObjects[i];
+        if ([o respondsToSelector:@selector(setBordered:)]) {
+            [o setBordered:v];
+        }
+    }
+}
+
 - (void)refresh {
     var inspectedObjects = [self inspectedObjects];
     var oldVal = null;
 
     for (var i=0,len=inspectedObjects.length; i< len; i++) {
-        var newVal = [inspectedObjects[i] alignment];
+        var o = inspectedObjects[i];
+        var newVal = [o alignment];
         if (oldVal != null && oldVal != newVal) {
-            [align selectItem:null];
-            return;
+            oldVal = null;
+            break;
         }
         oldVal = newVal;
     }
     [align selectItemAtIndex:oldVal];
+
+    [border takeValueFromKeyPath:"bordered" ofObjects:inspectedObjects];
 }
 
 @end
