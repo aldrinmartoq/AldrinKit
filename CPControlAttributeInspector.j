@@ -12,7 +12,10 @@
     @outlet CPButton            bold;
     @outlet CPButton            underline;
     @outlet CPButton            italic;
-    @outlet CPCheckBox          border;
+    @outlet CPCheckBox          bordered;
+    @outlet CPCheckBox          selectable;
+    @outlet CPCheckBox          editable;
+    @outlet CPCheckBox          enabled;
 }
 
 - (CPString)label {
@@ -32,14 +35,14 @@
     [align addItemWithTitle:@"Natural"];
 
     [align setTarget:self];
-    [align setAction:@selector(change:)];
+    [align setAction:@selector(textAlign:)];
 
     [bold setButtonType:6];
     [underline setButtonType:6];
     [italic setButtonType:6];
 }
 
-- (void)change:(id)sender {
+- (void)textAlign:(id)sender {
     var inspectedObjects = [self inspectedObjects];
     var a = [align indexOfItem:[align selectedItem]];
     for (var i=0,len=inspectedObjects.length; i< len; i++) {
@@ -47,14 +50,50 @@
     }
 }
 
-- (@action)border:(id)sender {
+- (@action)changeBordered:(id)sender {
     var inspectedObjects = [self inspectedObjects];
-    var v = [border state];
-    CPLog.debug("border change: " + v);
-    for (var i=0,len=inspectedObjects.length; i< len; i++) {
+    var v = [bordered state];
+    CPLog.debug("bordered change: " + v);
+    for (var i=0,len=inspectedObjects.length; i<len; i++) {
         var o = inspectedObjects[i];
         if ([o respondsToSelector:@selector(setBordered:)]) {
             [o setBordered:v];
+        }
+    }
+}
+
+- (@action)changeSelectable:(id)sender {
+    var inspectedObjects = [self inspectedObjects];
+    var v = [selectable state];
+    CPLog.debug("selectable change: " + v);
+    for (var i=0,len=inspectedObjects.length; i<len; i++) {
+        var o = inspectedObjects[i];
+        if ([o respondsToSelector:@selector(setSelectable:)]) {
+            [o setSelectable:v];
+        }
+    }
+}
+
+- (@action)changeEditable:(id)sender {
+    var inspectedObjects = [self inspectedObjects];
+    var v = [editable state];
+    CPLog.debug("editable change: " + v);
+    for (var i=0,len=inspectedObjects.length; i<len; i++) {
+        var o = inspectedObjects[i];
+        if ([o respondsToSelector:@selector(setEditable:)]) {
+            [o setEditable:v];
+        }
+    }
+}
+
+- (@action)changeEnabled:(id)sender {
+    var inspectedObjects = [self inspectedObjects];
+    var v = [enable state];
+    CPLog.debug("enabled change: " + v);
+    for (var i=0,len=inspectedObjects.length; i<len; i++) {
+        var o = inspectedObjects[i];
+        if ([o respondsToSelector:@selector(setEnabled:)]) {
+            [o setEnabled:v];
         }
     }
 }
@@ -74,7 +113,10 @@
     }
     [align selectItemAtIndex:oldVal];
 
-    [border takeValueFromKeyPath:"bordered" ofObjects:inspectedObjects];
+    [bordered takeValueFromKeyPath:"bordered" ofObjects:inspectedObjects];
+    [selectable takeValueFromKeyPath:"selectable" ofObjects:inspectedObjects];
+    [editable takeValueFromKeyPath:"editable" ofObjects:inspectedObjects];
+    [enabled takeValueFromKeyPath:"enabled" ofObjects:inspectedObjects];
 }
 
 @end
